@@ -1,0 +1,5 @@
+/phpunit.xml.dist
+/.idea/*
+/var/*
+/vendor/*
+!/var/.gitkeep
