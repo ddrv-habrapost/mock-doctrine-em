@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\User;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\NonUniqueResultException;
 
 /**
  * @method User|null find($id, $lockMode = null, $lockVersion = null)
@@ -21,7 +22,12 @@ class UserRepository extends EntityRepository
             ->andWhere('u.login = :login')->setParameter('login', $login)
             ->getQuery()
         ;
-        $result = new ArrayCollection($query->getResult());
-        return $result->first();
+        try {
+            $result = $query->getOneOrNullResult();
+        } catch (NonUniqueResultException $e) {
+            $results = $query->getResult();
+            $result = array_shift($results);
+        }
+        return $result;
     }
 }

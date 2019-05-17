@@ -49,7 +49,7 @@ class UserService
      * @throws LoginAlreadyExistsException
      * @throws ReferrerUserNotFoundException
      */
-    public function create(string $login, string $email, ?string $referrerLogin): User
+    public function create(string $login, string $email, ?string $referrerLogin = null): User
     {
         $exists = $this->users->findOneByLogin($login);
         if ($exists) throw new LoginAlreadyExistsException();

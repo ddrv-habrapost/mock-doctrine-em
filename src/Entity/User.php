@@ -45,14 +45,14 @@ class User
      * @ORM\Column(name="is_approved", type="boolean", options={"default": false})
      * @var bool
      */
-    private $isApproved;
+    private $isApproved = false;
 
     /**
      * @ORM\ManyToOne(targetEntity="User", inversedBy="referrals")
      * @ORM\JoinColumn(name="referrer_id", referencedColumnName="id", nullable=true)
      * @var User
      */
-    private $referrer;
+    private $referrer = null;
 
     /**
      * @ORM\OneToMany(targetEntity="User", mappedBy="referrer")
@@ -106,7 +106,7 @@ class User
         return $this;
     }
 
-    public function setReferrer(User $user): self
+    public function setReferrer(?User $user): self
     {
         $this->referrer = $user;
 
