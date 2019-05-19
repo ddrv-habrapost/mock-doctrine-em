@@ -4,23 +4,33 @@ namespace Tests\Unit\Service;
 
 use App\Entity\Code;
 use App\Entity\User;
+use App\Repository\CodeRepository;
 use App\Repository\UserRepository;
 use App\Service\Generator\CodeGenerator;
 use App\Service\Sender\SenderService;
 use App\Service\User\Exception\LoginAlreadyExistsException;
 use App\Service\User\Exception\ReferrerUserNotFoundException;
 use App\Service\User\UserService;
-use Tests\BaseTestCase;
+use Tests\TestCase;
+use Doctrine\ORM\EntityManagerInterface;
 
-class UserServiceTest  extends BaseTestCase
+class UserServiceTest  extends TestCase
 {
 
-    /** @var UserService */
+    /**
+     * @var UserService
+     */
     protected $service;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    protected $em;
 
     public function setUp(): void
     {
         parent::setUp();
+        $this->em = $this->getEntityManager();
         $this->service = new UserService($this->em, new SenderService(), new CodeGenerator());
     }
 
@@ -30,7 +40,7 @@ class UserServiceTest  extends BaseTestCase
      */
     public function testCreateSuccessWithoutReferrer()
     {
-        $login = uniqid('phpunit.');
+        $login = 'case1';
         $email = $login . '@localhost';
         $user = $this->service->create($login, $email);
         $this->assertInstanceOf(User::class, $user);
@@ -38,35 +48,92 @@ class UserServiceTest  extends BaseTestCase
         $this->assertSame($email, $user->getEmail());
         $this->assertFalse($user->isApproved());
         // Убедимся, что пользователь добавлен в базу
-        /** @var UserRepository $repo */
-        $repo = $this->em->getRepository(User::class);
-        $u = $repo->findOneByLogin($login);
+        /** @var UserRepository $userRepo */
+        $userRepo = $this->em->getRepository(User::class);
+        $u = $userRepo->findOneByLogin($login);
         $this->assertInstanceOf(User::class, $u);
         $this->assertSame($login, $u->getLogin());
         $this->assertSame($email, $u->getEmail());
         $this->assertFalse($u->isApproved());
-        // Удалим за собой созданные данные
-        $this->em->remove($u);
-        foreach ($this->em->getRepository(Code::class)->findBy(['email' => $email]) as $code) {
-            $this->em->remove($code);
-        }
-        $this->em->flush();
+        // Убедимся, что код подтверждения добавлен в базу
+        /** @var CodeRepository $codeRepo */
+        $codeRepo = $this->em->getRepository(Code::class);
+        $c = $codeRepo->findOneBy(['email' => $email]);
+        $this->assertInstanceOf(Code::class, $c);
     }
 
-    private function clearDB($emails)
+    /**
+     * @throws LoginAlreadyExistsException
+     * @throws ReferrerUserNotFoundException
+     */
+    public function testCreateSuccessWithReferrer()
     {
-        $users = [];
-        $codes = [];
-        foreach ($emails as $email) {
-            $users += $this->em->getRepository(User::class)->findBy(['email' => $email]);
-            $codes += $this->em->getRepository(Code::class)->findBy(['email' => $email]);
-        }
-        foreach ($users as $user) {
-            $this->em->remove($user);
-        }
-        foreach ($codes as $code) {
-            $this->em->remove($code);
-        }
+        // Добавим в БД реферера
+        $referrerLogin  = 'referer';
+        $referrer = new User();
+        $referrer
+            ->setLogin($referrerLogin)
+            ->setEmail($referrerLogin.'@localhost')
+        ;
+        $this->em->persist($referrer);
         $this->em->flush();
+
+        $login = 'case2';
+        $email = $login . '@localhost';
+        $user = $this->service->create($login, $email, $referrerLogin);
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertSame($login, $user->getLogin());
+        $this->assertSame($email, $user->getEmail());
+        $this->assertFalse($user->isApproved());
+        $this->assertSame($referrer, $user->getReferrer());
+        // Убедимся, что пользователь добавлен в базу
+        /** @var UserRepository $userRepo */
+        $userRepo = $this->em->getRepository(User::class);
+        $u = $userRepo->findOneByLogin($login);
+        $this->assertInstanceOf(User::class, $u);
+        $this->assertSame($login, $u->getLogin());
+        $this->assertSame($email, $u->getEmail());
+        $this->assertFalse($u->isApproved());
+        // Убедимся, что код подтверждения добавлен в базу
+        /** @var CodeRepository $codeRepo */
+        $codeRepo = $this->em->getRepository(Code::class);
+        $c = $codeRepo->findOneBy(['email' => $email]);
+        $this->assertInstanceOf(Code::class, $c);
+    }
+
+    /**
+     * @throws LoginAlreadyExistsException
+     * @throws ReferrerUserNotFoundException
+     */
+    public function testCreateFailWithNonexistentReferrer()
+    {
+        $this->expectException(ReferrerUserNotFoundException::class);
+
+        $referrerLogin  = 'nonexistent-referer';
+        $login = 'case3';
+        $email = $login . '@localhost';
+        $this->service->create($login, $email, $referrerLogin);
+    }
+
+    /**
+     * @throws LoginAlreadyExistsException
+     * @throws ReferrerUserNotFoundException
+     */
+    public function testCreateFailWithExistentLogin()
+    {
+        $this->expectException(LoginAlreadyExistsException::class);
+
+        $referrerLogin  = 'case4';
+        $referrer = new User();
+        $referrer
+            ->setLogin($referrerLogin)
+            ->setEmail($referrerLogin.'@localhost')
+        ;
+        $this->em->persist($referrer);
+        $this->em->flush();
+
+        $login = 'case4';
+        $email = $login . '@localhost';
+        $this->service->create($login, $email, null);
     }
 }

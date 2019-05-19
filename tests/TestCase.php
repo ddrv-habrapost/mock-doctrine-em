@@ -4,24 +4,16 @@ namespace Tests;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Cache\ArrayCache;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\ORM\Tools\Setup;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\TestCase as BaseTestCase;
 
-class BaseTestCase extends TestCase
+abstract class TestCase extends BaseTestCase
 {
 
-    /** @var EntityManagerInterface */
-    protected $em;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-        $this->em = $this->getEntityManager();
-    }
 
     protected function getEntityManager(): EntityManagerInterface
     {
@@ -37,12 +29,16 @@ class BaseTestCase extends TestCase
         $config->setQueryCacheImpl($cache);
         $config->setMetadataDriverImpl($driver);
         $connection = array(
-            'driver' => 'pdo_sqlite',
-            'path' => dirname(__DIR__) . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'testing.sqlite',
+            'driver'   => getenv('DB_DRIVER'),
+            'path'     => getenv('DB_PATH'),
+            'user'     => getenv('DB_USER'),
+            'password' => getenv('DB_PASSWORD'),
+            'dbname'   => getenv('DB_NAME'),
         );
         $em = EntityManager::create($connection, $config);
         $schema = new SchemaTool($em);
-        $schema->updateSchema($em->getMetadataFactory()->getAllMetadata(), true);
+        $schema->dropSchema($em->getMetadataFactory()->getAllMetadata());
+        $schema->createSchema($em->getMetadataFactory()->getAllMetadata());
         return $em;
     }
 }

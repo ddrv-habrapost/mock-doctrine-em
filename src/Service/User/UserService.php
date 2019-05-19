@@ -66,26 +66,4 @@ class UserService
         $this->em->flush();
         return $user;
     }
-
-    /**
-     * @param string $login
-     * @param string $code
-     * @return bool
-     * @throws IncorrectApproveCodeException
-     * @throws UserNotFoundException
-     */
-    public function approve(string $login, string $code): bool
-    {
-        $user = $this->users->findOneByLogin($login);
-        if (!$user) throw new UserNotFoundException();
-        $code = $this->codes->findOneByCodeAndEmail($code, $user->getEmail());
-        if (!$code) {
-            throw new IncorrectApproveCodeException();
-        }
-        $user->setApproved(true);
-        $this->em->persist($user);
-        $this->em->remove($code);
-        $this->em->flush();
-        return true;
-    }
 }

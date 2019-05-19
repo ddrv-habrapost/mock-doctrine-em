@@ -9,6 +9,13 @@
          beStrictAboutTodoAnnotatedTests="true"
          verbose="true"
          colors="true">
+    <php>
+        <env name="DB_DRIVER" value="pdo_sqlite" />
+        <env name="DB_PATH" value="var/db-test.sqlite" />
+        <env name="DB_USER" value="" />
+        <env name="DB_PASSWORD" value="" />
+        <env name="DB_NAME" value="" />
+    </php>
     <testsuites>
         <testsuite name="default">
             <directory>tests/Unit</directory>
