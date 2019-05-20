@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Code;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\NonUniqueResultException;
 
 /**
  * @method Code|null find($id, $lockMode = null, $lockVersion = null)
@@ -23,7 +24,28 @@ class CodeRepository extends EntityRepository
             ->orderBy('c.id', 'DESC')
             ->getQuery()
         ;
-        $result = new ArrayCollection($query->getResult());
-        return $result->first();
+        try {
+            $result = $query->getOneOrNullResult();
+        } catch (NonUniqueResultException $e) {
+            $results = $query->getResult();
+            $result = array_shift($results);
+        }
+        return $result;
+    }
+
+    public function findLastByEmail(string $email): ?Code
+    {
+        $query = $this->createQueryBuilder('c')
+            ->andWhere('c.email = :email')->setParameter('email', $email)
+            ->orderBy('c.id', 'DESC')
+            ->getQuery()
+        ;
+        try {
+            $result = $query->getOneOrNullResult();
+        } catch (NonUniqueResultException $e) {
+            $results = $query->getResult();
+            $result = array_shift($results);
+        }
+        return $result;
     }
 }

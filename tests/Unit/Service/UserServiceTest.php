@@ -40,7 +40,7 @@ class UserServiceTest  extends TestCase
      */
     public function testCreateSuccessWithoutReferrer()
     {
-        // Создадим пользователя без реферера с помощью сервиса
+        // Создадим пользователя без реферрера с помощью сервиса
         $login = 'case1';
         $email = $login . '@localhost';
         $user = $this->service->create($login, $email);
@@ -60,7 +60,7 @@ class UserServiceTest  extends TestCase
         // Убедимся, что код подтверждения добавлен в базу
         /** @var CodeRepository $codeRepo */
         $codeRepo = $this->em->getRepository(Code::class);
-        $c = $codeRepo->findOneBy(['email' => $email]);
+        $c = $codeRepo->findLastByEmail($email);
         $this->assertInstanceOf(Code::class, $c);
     }
 
@@ -70,7 +70,7 @@ class UserServiceTest  extends TestCase
      */
     public function testCreateSuccessWithReferrer()
     {
-        // Предварительно добавим в БД реферера
+        // Предварительно добавим в БД реферрера
         $referrerLogin  = 'referer';
         $referrer = new User();
         $referrer
@@ -79,7 +79,7 @@ class UserServiceTest  extends TestCase
         ;
         $this->em->persist($referrer);
         $this->em->flush();
-        // Создадим пользователя с реферером с помощью сервиса
+        // Создадим пользователя с реферрером с помощью сервиса
         $login = 'case2';
         $email = $login . '@localhost';
         $user = $this->service->create($login, $email, $referrerLogin);
@@ -100,7 +100,7 @@ class UserServiceTest  extends TestCase
         // Убедимся, что код подтверждения добавлен в базу
         /** @var CodeRepository $codeRepo */
         $codeRepo = $this->em->getRepository(Code::class);
-        $c = $codeRepo->findOneBy(['email' => $email]);
+        $c = $codeRepo->findLastByEmail($email);
         $this->assertInstanceOf(Code::class, $c);
     }
 
@@ -116,7 +116,7 @@ class UserServiceTest  extends TestCase
         $referrerLogin  = 'nonexistent-referer';
         $login = 'case3';
         $email = $login . '@localhost';
-        // Попробуем создать пользователя с несуществующим реферером
+        // Попробуем создать пользователя с несуществующим реферрером
         $this->service->create($login, $email, $referrerLogin);
     }
 

@@ -10,6 +10,7 @@
          verbose="true"
          colors="true">
     <php>
+        <env name="EMULATE_BD" value="0" />
         <env name="DB_DRIVER" value="pdo_sqlite" />
         <env name="DB_PATH" value="var/db-test.sqlite" />
         <env name="DB_USER" value="" />
