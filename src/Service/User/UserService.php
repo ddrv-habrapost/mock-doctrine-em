@@ -8,10 +8,8 @@ use App\Repository\CodeRepository;
 use App\Repository\UserRepository;
 use App\Service\Generator\CodeGenerator;
 use App\Service\Sender\SenderService;
-use App\Service\User\Exception\IncorrectApproveCodeException;
 use App\Service\User\Exception\LoginAlreadyExistsException;
 use App\Service\User\Exception\ReferrerUserNotFoundException;
-use App\Service\User\Exception\UserNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
 
 class UserService

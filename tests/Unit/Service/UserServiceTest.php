@@ -40,9 +40,11 @@ class UserServiceTest  extends TestCase
      */
     public function testCreateSuccessWithoutReferrer()
     {
+        // Создадим пользователя без реферера с помощью сервиса
         $login = 'case1';
         $email = $login . '@localhost';
         $user = $this->service->create($login, $email);
+        // Убедимся, что сервис вернул нам созданного пользователя
         $this->assertInstanceOf(User::class, $user);
         $this->assertSame($login, $user->getLogin());
         $this->assertSame($email, $user->getEmail());
@@ -68,7 +70,7 @@ class UserServiceTest  extends TestCase
      */
     public function testCreateSuccessWithReferrer()
     {
-        // Добавим в БД реферера
+        // Предварительно добавим в БД реферера
         $referrerLogin  = 'referer';
         $referrer = new User();
         $referrer
@@ -77,10 +79,11 @@ class UserServiceTest  extends TestCase
         ;
         $this->em->persist($referrer);
         $this->em->flush();
-
+        // Создадим пользователя с реферером с помощью сервиса
         $login = 'case2';
         $email = $login . '@localhost';
         $user = $this->service->create($login, $email, $referrerLogin);
+        // Убедимся, что сервис вернул нам созданного пользователя
         $this->assertInstanceOf(User::class, $user);
         $this->assertSame($login, $user->getLogin());
         $this->assertSame($email, $user->getEmail());
@@ -107,11 +110,13 @@ class UserServiceTest  extends TestCase
      */
     public function testCreateFailWithNonexistentReferrer()
     {
+        // Считаем тест успешным, если сервис выкинет исключение ReferrerUserNotFoundException
         $this->expectException(ReferrerUserNotFoundException::class);
 
         $referrerLogin  = 'nonexistent-referer';
         $login = 'case3';
         $email = $login . '@localhost';
+        // Попробуем создать пользователя с несуществующим реферером
         $this->service->create($login, $email, $referrerLogin);
     }
 
@@ -121,19 +126,21 @@ class UserServiceTest  extends TestCase
      */
     public function testCreateFailWithExistentLogin()
     {
+        // Считаем тест успешным, если сервис выкинет исключение LoginAlreadyExistsException
         $this->expectException(LoginAlreadyExistsException::class);
 
-        $referrerLogin  = 'case4';
-        $referrer = new User();
-        $referrer
-            ->setLogin($referrerLogin)
-            ->setEmail($referrerLogin.'@localhost')
-        ;
-        $this->em->persist($referrer);
-        $this->em->flush();
-
-        $login = 'case4';
+        // Зададим логин и адрес электронной почты
+        $login  = 'case4';
         $email = $login . '@localhost';
+        // Предварительно добавим в базу пользователя с логином, который окажется занят
+        $existentUser = new User();
+        $existentUser
+            ->setLogin($login)
+            ->setEmail($login.'@localhost')
+        ;
+        $this->em->persist($existentUser);
+        $this->em->flush();
+        // Попробуем создать пользователя с занятым логином
         $this->service->create($login, $email, null);
     }
 }
